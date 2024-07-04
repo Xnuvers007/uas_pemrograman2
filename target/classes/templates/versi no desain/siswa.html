@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Data Siswa</title>
+</head>
+<body>
+    <h1>Data Siswa</h1>
+    <form id="siswaForm" enctype="multipart/form-data">
+        <input type="hidden" id="siswaId" name="id"/>
+        <label for="id_ta">ID TA:</label>
+        <input type="text" id="id_ta" name="id_ta"/><br/><br/>
+
+        <label for="nama_lengkap">Nama Lengkap:</label>
+        <input type="text" id="nama_lengkap" name="nama_lengkap"/><br/><br/>
+
+        <label for="alamat">Alamat:</label>
+        <input type="text" id="alamat" name="alamat"/><br/><br/>
+
+        <label for="telp">Telepon:</label>
+        <input type="text" id="telp" name="telp"/><br/><br/>
+
+        <label for="nama_ortu">Nama Orang Tua:</label>
+        <input type="text" id="nama_ortu" name="nama_ortu"/><br/><br/>
+
+        <label for="nisn">NISN:</label>
+        <input type="text" id="nisn" name="nisn"/><br/><br/>
+
+        <label for="status">Status:</label>
+        <select id="status" name="status">
+            <option value="true">Aktif</option>
+            <option value="false">Tidak Aktif</option>
+        </select><br/><br/>
+
+        <label for="tanggal_lahir">Tanggal Lahir:</label>
+        <input type="date" id="tanggal_lahir" name="tanggal_lahir"/><br/><br/>
+
+        <label for="foto">Foto:</label>
+        <input type="file" id="foto" name="foto"/><br/><br/>
+
+        <img id="foto-preview" src="" width="100" alt="Preview Foto"/><br/><br/>
+
+        <button type="button" onclick="submitForm()">Simpan</button>
+        <button type="button" onclick="clearForm()">Batal</button>
+    </form>
+
+    <h2>Data Siswa</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID TA</th>
+                <th>Nama Lengkap</th>
+                <th>Alamat</th>
+                <th>Telepon</th>
+                <th>Nama Ortu</th>
+                <th>NISN</th>
+                <th>Status</th>
+                <th>Tanggal Lahir</th>
+                <th>Foto</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="siswaTableBody">
+            <!-- Data siswa akan ditampilkan di sini -->
+        </tbody>
+    </table>
+
+    <script>
+        function submitForm() {
+            var form = document.getElementById("siswaForm");
+            var formData = new FormData(form);
+            var id = document.getElementById("siswaId").value; // Get the ID from hidden input
+
+            var xhr = new XMLHttpRequest();
+            if (id) {
+                // Update existing siswa
+                xhr.open("PUT", "/api/siswa/" + id, true); // Use PUT method for update
+            } else {
+                // Create new siswa
+                xhr.open("POST", "/api/siswa", true);
+            }
+            xhr.onload = function () {
+                if (xhr.status === 200 || xhr.status === 201) {
+                    alert('Data siswa berhasil disimpan!');
+                    form.reset();
+                    refreshSiswaTable(); // Refresh table after successful create/update
+                } else {
+                    alert('Gagal menyimpan data siswa.');
+                }
+            };
+            xhr.send(formData);
+        }
+
+        function refreshSiswaTable() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/api/siswa", true);
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var siswaList = JSON.parse(xhr.responseText);
+                    var siswaTableBody = document.getElementById("siswaTableBody");
+                    siswaTableBody.innerHTML = ""; // Clear table body before adding new data
+
+                    siswaList.forEach(function (siswa) {
+                        var row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${siswa.id}</td>
+                            <td>${siswa.idTa}</td>
+                            <td>${siswa.namaLengkap}</td>
+                            <td>${siswa.alamat}</td>
+                            <td>${siswa.telp}</td>
+                            <td>${siswa.namaOrtu}</td>
+                            <td>${siswa.nisn}</td>
+                            <td>${siswa.status ? 'Aktif' : 'Tidak Aktif'}</td>
+                            <td>${siswa.tanggalLahir}</td>
+                            <td><img src="data:image/jpeg;base64,${siswa.fotoBase64}" width="100"/></td>
+                            <td>
+                                <button onclick="editSiswa('${siswa.id}')">Edit</button>
+                                <button onclick="deleteSiswa('${siswa.id}')">Delete</button>
+                            </td>
+                        `;
+                        siswaTableBody.appendChild(row);
+                    });
+                } else {
+                    alert('Gagal memuat data siswa.');
+                }
+            };
+            xhr.send();
+        }
+
+        function editSiswa(id) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/api/siswa/" + id, true);
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var siswa = JSON.parse(xhr.responseText);
+
+                    document.getElementById("siswaId").textContent = siswa.id;
+                    document.getElementById("id_ta").value = siswa.idTa;
+                    document.getElementById("nama_lengkap").value = siswa.namaLengkap;
+                    document.getElementById("alamat").value = siswa.alamat;
+                    document.getElementById("telp").value = siswa.telp;
+                    document.getElementById("nama_ortu").value = siswa.namaOrtu;
+                    document.getElementById("nisn").value = siswa.nisn;
+                    document.getElementById("status").value = siswa.status.toString();
+                    document.getElementById("tanggal_lahir").value = siswa.tanggalLahir;
+
+                    var fotoElement = document.getElementById("foto-preview");
+                    if (siswa.fotoBase64) {
+                        fotoElement.src = "data:image/jpeg;base64," + siswa.fotoBase64;
+                    } else {
+                        fotoElement.src = ""; // Clear the image if no photo available
+                    }
+                } else {
+                    alert('Gagal mendapatkan data siswa.');
+                }
+            };
+            xhr.send();
+        }
+
+        function deleteSiswa(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus siswa ini?')) {
+                var xhr = new XMLHttpRequest();
+                xhr.open("DELETE", "/api/siswa/" + id, true);
+                xhr.onload = function () {
+                    if (xhr.status === 204) {
+                        alert('Data siswa berhasil dihapus!');
+                        refreshSiswaTable(); // Refresh table after successful delete
+                    } else {
+                        alert('Gagal menghapus data siswa.');
+                    }
+                };
+                xhr.send();
+            }
+        }
+
+        function clearForm() {
+            var form = document.getElementById("siswaForm");
+            form.reset();
+            document.getElementById("siswaId").value = ""; // Clear hidden ID input
+            document.getElementById("foto-preview").src = ""; // Clear image preview
+        }
+
+        window.onload = function () {
+            // Tambahkan event listener untuk input file
+            var fotoInput = document.getElementById('foto');
+            fotoInput.addEventListener('change', function() {
+                var fotoPreview = document.getElementById('foto-preview');
+                var fotoFile = fotoInput.files[0];
+                var reader = new FileReader();
+                reader.onloadend = function() {
+                    fotoPreview.src = reader.result; // Set src of image to base64 string
+                }
+                if (fotoFile) {
+                    reader.readAsDataURL(fotoFile); // Convert file to base64
+                } else {
+                    fotoPreview.src = ""; // Clear image if no file selected
+                }
+            });
+
+            refreshSiswaTable();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+CREATE TABLE Siswa (
+id INT AUTO_INCREMENT PRIMARY KEY,
+id_ta int,
+nama_lengkap VARCHAR(255),
+alamat VARCHAR(255),
+telp VARCHAR(255),
+nama_ortu VARCHAR(255),
+nisn VARCHAR(20),
+status BOOLEAN,
+tanggal_lahir DATE,
+foto BLOB
+);
+
+CREATE TABLE MataPelajaran (
+id INT AUTO_INCREMENT PRIMARY KEY,
+kode_mapel VARCHAR(50),
+nama_mapel VARCHAR(255),
+tingkat VARCHAR(50)
+);
+
+CREATE TABLE PrestasiAkademik (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    deskripsi_atau_nilai VARCHAR(255),
+    id_mapel INT,
+    id_siswa INT,
+    jenis_prestasi CHAR(50),
+    tanggal DATE,
+    FOREIGN KEY (id_mapel) REFERENCES MataPelajaran(id),
+    FOREIGN KEY (id_siswa) REFERENCES Siswa(id)
+);
+
+CREATE TABLE JadwalPelajaran (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    hari ENUM('senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'),
+    id_guru INT,
+    id_kelas INT,
+    id_mapel INT,
+    id_siswa INT,
+    jam_mulai INT,
+    jam_selesai INT,
+    FOREIGN KEY (id_mapel) REFERENCES MataPelajaran(id),
+    FOREIGN KEY (id_siswa) REFERENCES Siswa(id)
+);

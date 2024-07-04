@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en" id="htmlElement" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Mata Pelajaran</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10.16.7/dist/sweetalert2.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        [data-bs-theme="dark"] {
+            background-color: #212529;
+            color: #fff;
+        }
+        [data-bs-theme="dark"] .container {
+            background-color: #343a40;
+            color: #fff;
+        }
+        [data-bs-theme="dark"] .table th,
+        [data-bs-theme="dark"] .table td {
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="text-center mb-4">
+            <h1>Data Mata Pelajaran</h1>
+            <p id="currentDate" class="mb-0"></p>
+            <button id="themeSwitchBtn" class="btn btn-sm btn-light ms-2" onclick="toggleTheme()">Change Theme</button>
+        </div>
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Kode Mapel</th>
+                        <th>Nama Mapel</th>
+                        <th>Tingkat</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="mataPelajaranList">
+                    <!-- Data mata pelajaran akan dimuat di sini -->
+                </tbody>
+            </table>
+        </div>
+
+        <h2>Tambah Mata Pelajaran</h2>
+        <form id="tambahMataPelajaranForm" class="mb-4">
+            <div class="form-group">
+                <label for="kodeMapel">Kode Mapel:</label>
+                <input type="text" class="form-control" id="kodeMapel">
+            </div>
+            <div class="form-group">
+                <label for="namaMapel">Nama Mapel:</label>
+                <input type="text" class="form-control" id="namaMapel">
+            </div>
+            <div class="form-group">
+                <label for="tingkat">Tingkat:</label>
+                <input type="text" class="form-control" id="tingkat">
+            </div>
+            <br />
+            <button type="button" class="btn btn-success" onclick="createMataPelajaran()">Simpan</button>
+            <button type="reset" class="btn btn-secondary" onclick="resetForm()">Reset</button>
+            <button type="button" class="btn btn-primary" onclick="checkapi()">Check API</button>
+        </form>
+
+        <div id="editFormContainer" style="display: none;">
+            <h2>Edit Mata Pelajaran</h2>
+            <form id="editMataPelajaranForm" class="mb-4">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label for="editKodeMapel">Kode Mapel:</label>
+                    <input type="text" class="form-control" id="editKodeMapel">
+                </div>
+                <div class="form-group">
+                    <label for="editNamaMapel">Nama Mapel:</label>
+                    <input type="text" class="form-control" id="editNamaMapel">
+                </div>
+                <div class="form-group">
+                    <label for="editTingkat">Tingkat:</label>
+                    <input type="text" class="form-control" id="editTingkat">
+                </div>
+                <br />
+                <button type="button" class="btn btn-success" onclick="updateMataPelajaran()">Simpan Perubahan</button>
+                <button type="button" class="btn btn-secondary" onclick="cancelEdit()">Batal</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.6.0/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10.16.7/dist/sweetalert2.min.js"></script>
+    <script>
+        function getCurrentDate() {
+            var currentDate = new Date();
+            var day = currentDate.getDate();
+            var month = currentDate.getMonth() + 1;
+            var year = currentDate.getFullYear();
+            var hours = currentDate.getHours();
+            var minutes = currentDate.getMinutes();
+            var seconds = currentDate.getSeconds();
+            return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+        }
+
+        function displayCurrentDate() {
+            document.getElementById('currentDate').textContent = getCurrentDate();
+        }
+
+        function toggleTheme() {
+            var htmlElement = document.documentElement;
+            var currentTheme = htmlElement.getAttribute('data-bs-theme');
+            var newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            htmlElement.setAttribute('data-bs-theme', newTheme);
+        }
+
+        function checkapi() {
+            Swal.fire('Success!', 'Segera Diarahkan', 'success');
+            window.location.href = "/api/matapelajaran";
+        }
+
+        // Function untuk memuat data mata pelajaran saat halaman dimuat
+        window.onload = function () {
+            loadMataPelajaran();
+            displayCurrentDate();
+            setInterval(displayCurrentDate, 1000); // Update the date every second
+        };
+
+        function fetchData(url, callback) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", url, true);
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    callback(null, JSON.parse(xhr.responseText));
+                } else {
+                    callback(xhr.statusText, null);
+                }
+            };
+            xhr.send();
+        }
+
+        var baseUrl = "http://localhost:8080/api/matapelajaran";
+
+
+        // Function untuk memuat data mata pelajaran dari server
+        function loadMataPelajaran() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/api/matapelajaran", true);
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var mataPelajaranList = JSON.parse(xhr.responseText);
+                    var tableBody = document.getElementById("mataPelajaranList");
+                    tableBody.innerHTML = ""; // Kosongkan isi tabel sebelum menambahkan data baru
+
+                    mataPelajaranList.forEach(function (mataPelajaran) {
+                        var row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${mataPelajaran.id}</td>
+                            <td>${mataPelajaran.kodeMapel}</td>
+                            <td>${mataPelajaran.namaMapel}</td>
+                            <td>${mataPelajaran.tingkat}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="editMataPelajaran(${mataPelajaran.id})">Edit</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteMataPelajaran(${mataPelajaran.id})">Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                    Swal.fire('Success', 'Data berhasil dimuat!', 'success');
+                } else {
+                    Swal.fire('Error', 'Gagal memuat data mata pelajaran.', 'error');
+                }
+            };
+            xhr.send();
+        }
+
+        // Function untuk menambah mata pelajaran baru
+        function createMataPelajaran() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/api/matapelajaran", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            var kodeMapel = document.getElementById("kodeMapel").value;
+            var namaMapel = document.getElementById("namaMapel").value;
+            var tingkat = document.getElementById("tingkat").value;
+
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    Swal.fire('Success', 'Mata pelajaran berhasil ditambahkan!', 'success');
+                    loadMataPelajaran(); // Muat ulang data setelah berhasil tambah
+                    resetForm(); // Reset form setelah berhasil tambah
+                } else {
+                    Swal.fire('Error', 'Gagal menambahkan mata pelajaran.', 'error');
+                }
+            };
+
+            var data = JSON.stringify({
+                kodeMapel: kodeMapel,
+                namaMapel: namaMapel,
+                tingkat: tingkat
+            });
+            xhr.send(data);
+        }
+
+        // Function untuk mengambil data mata pelajaran berdasarkan ID untuk proses edit
+        function editMataPelajaran(id) {
+    fetchData(`${baseUrl}/${id}`, (error, data) => {
+        if (!error) {
+            Swal.fire({
+                title: `Apakah Anda ingin mengedit data pada ID: ${data.id}?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, edit!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('GET', `${baseUrl}/${id}`, true);
+                    xhr.onload = function() {
+                        if (xhr.status === 200) {
+                            const mataPelajaran = JSON.parse(xhr.responseText);
+                            document.getElementById('editId').value = mataPelajaran.id;
+                            document.getElementById('editKodeMapel').value = mataPelajaran.kodeMapel;
+                            document.getElementById('editNamaMapel').value = mataPelajaran.namaMapel;
+                            document.getElementById('editTingkat').value = mataPelajaran.tingkat;
+
+                            // Tampilkan form edit
+                            document.getElementById('editFormContainer').style.display = 'block';
+                        } else {
+                            Swal.fire('Error', 'Gagal mendapatkan data mata pelajaran.', 'error');
+                        }
+                    };
+                    xhr.send();
+                }
+            });
+        } else {
+            console.error('Error fetching data for editing:', error);
+            Swal.fire('Error', 'Gagal mengambil data mata pelajaran untuk diedit.', 'error');
+        }
+    });
+}
+
+
+        // Function untuk menyimpan perubahan pada mata pelajaran yang diedit
+        function updateMataPelajaran() {
+            Swal.fire({
+                title: 'Apakah Anda ingin mengupdate data?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, update!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var id = document.getElementById("editId").value;
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("PUT", "/api/matapelajaran/" + id, true);
+                    xhr.setRequestHeader("Content-Type", "application/json");
+
+                    var kodeMapel = document.getElementById("editKodeMapel").value;
+                    var namaMapel = document.getElementById("editNamaMapel").value;
+                    var tingkat = document.getElementById("editTingkat").value;
+
+                    xhr.onload = function () {
+                        if (xhr.status === 200) {
+                            Swal.fire('Success', 'Mata pelajaran berhasil diperbarui!', 'success');
+                            loadMataPelajaran(); // Muat ulang data setelah berhasil update
+                            cancelEdit(); // Sembunyikan form edit setelah selesai
+                        } else {
+                            Swal.fire('Error', 'Gagal memperbarui mata pelajaran.', 'error');
+                        }
+                    };
+
+                    var data = JSON.stringify({
+                        kodeMapel: kodeMapel,
+                        namaMapel: namaMapel,
+                        tingkat: tingkat
+                    });
+                    xhr.send(data);
+                }
+            });
+        }
+
+        // Function untuk menghapus mata pelajaran berdasarkan ID
+        function deleteMataPelajaran(id) {
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Data ini tidak dapat dikembalikan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("DELETE", "/api/matapelajaran/" + id, true);
+                    xhr.onload = function () {
+                        if (xhr.status === 204) {
+                            Swal.fire('Success', 'Mata pelajaran berhasil dihapus!', 'success');
+                            loadMataPelajaran(); // Muat ulang data setelah berhasil hapus
+                        } else {
+                            Swal.fire('Error', 'Gagal menghapus mata pelajaran.', 'error');
+                        }
+                    };
+                    xhr.send();
+                }
+            });
+        }
+
+        // Function untuk membatalkan edit dan menyembunyikan form edit
+        function cancelEdit() {
+            document.getElementById("editFormContainer").style.display = "none";
+            document.getElementById("editId").value = "";
+            document.getElementById("editKodeMapel").value = "";
+            document.getElementById("editNamaMapel").value = "";
+            document.getElementById("editTingkat").value = "";
+        }
+
+        // Function untuk mereset form tambah mata pelajaran
+        function resetForm() {
+            document.getElementById("kodeMapel").value = "";
+            document.getElementById("namaMapel").value = "";
+            document.getElementById("tingkat").value = "";
+        }
+    </script>
+</body>
+</html>

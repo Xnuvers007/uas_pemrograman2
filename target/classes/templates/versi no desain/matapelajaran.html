@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Data Mata Pelajaran</title>
+</head>
+<body>
+    <h1>Data Mata Pelajaran</h1>
+
+    <!-- Tabel untuk menampilkan data mata pelajaran -->
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Kode Mapel</th>
+                <th>Nama Mapel</th>
+                <th>Tingkat</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="mataPelajaranList">
+            <!-- Data mata pelajaran akan dimuat di sini -->
+        </tbody>
+    </table>
+
+    <!-- Form untuk menambah data mata pelajaran -->
+    <h2>Tambah Mata Pelajaran</h2>
+    <label for="kodeMapel">Kode Mapel:</label>
+    <input type="text" id="kodeMapel"><br><br>
+    <label for="namaMapel">Nama Mapel:</label>
+    <input type="text" id="namaMapel"><br><br>
+    <label for="tingkat">Tingkat:</label>
+    <input type="text" id="tingkat"><br><br>
+    <button onclick="createMataPelajaran()">Simpan</button>
+    <button type="reset" onclick="resetForm()">Reset</button>
+    <button onclick="checkapi()">Check API</button>
+
+    <!-- Form untuk mengedit data mata pelajaran (disembunyikan secara default) -->
+    <div id="editFormContainer" style="display: none;">
+        <h2>Edit Mata Pelajaran</h2>
+        <input type="hidden" id="editId">
+        <label for="editKodeMapel">Kode Mapel:</label>
+        <input type="text" id="editKodeMapel"><br><br>
+        <label for="editNamaMapel">Nama Mapel:</label>
+        <input type="text" id="editNamaMapel"><br><br>
+        <label for="editTingkat">Tingkat:</label>
+        <input type="text" id="editTingkat"><br><br>
+        <button onclick="updateMataPelajaran()">Simpan Perubahan</button>
+        <button onclick="cancelEdit()">Batal</button>
+    </div>
+
+    <!-- JavaScript untuk memuat data awal dan interaksi dengan server -->
+    <script>
+
+        function checkapi() {
+            window.location.href = "/api/matapelajaran";
+        }
+
+        // Function untuk memuat data mata pelajaran saat halaman dimuat
+        window.onload = function () {
+            loadMataPelajaran();
+        };
+
+        // Function untuk memuat data mata pelajaran dari server
+        function loadMataPelajaran() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/api/matapelajaran", true);
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var mataPelajaranList = JSON.parse(xhr.responseText);
+                    var tableBody = document.getElementById("mataPelajaranList");
+                    tableBody.innerHTML = ""; // Kosongkan isi tabel sebelum menambahkan data baru
+
+                    mataPelajaranList.forEach(function (mataPelajaran) {
+                        var row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${mataPelajaran.id}</td>
+                            <td>${mataPelajaran.kodeMapel}</td>
+                            <td>${mataPelajaran.namaMapel}</td>
+                            <td>${mataPelajaran.tingkat}</td>
+                            <td>
+                                <button onclick="editMataPelajaran(${mataPelajaran.id})">Edit</button>
+                                <button onclick="deleteMataPelajaran(${mataPelajaran.id})">Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                    Swal.fire('Success', 'Data mata pelajaran loaded successfully', 'success');
+                } else {
+                    // alert('Gagal memuat data mata pelajaran.');
+                    Swal.fire('Error', 'Failed to load data mata pelajaran', 'error');
+                }
+            };
+            xhr.send();
+        }
+
+        // Function untuk menambah mata pelajaran baru
+        function createMataPelajaran() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/api/matapelajaran", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            var kodeMapel = document.getElementById("kodeMapel").value;
+            var namaMapel = document.getElementById("namaMapel").value;
+            var tingkat = document.getElementById("tingkat").value;
+
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    alert('Mata pelajaran berhasil ditambahkan!');
+                    loadMataPelajaran(); // Muat ulang data setelah berhasil tambah
+                    resetForm(); // Reset form setelah berhasil tambah
+                } else {
+                    alert('Gagal menambahkan mata pelajaran.');
+                }
+            };
+
+            var data = JSON.stringify({
+                kodeMapel: kodeMapel,
+                namaMapel: namaMapel,
+                tingkat: tingkat
+            });
+            xhr.send(data);
+        }
+
+        // Function untuk mengambil data mata pelajaran berdasarkan ID untuk proses edit
+        function editMataPelajaran(id) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/api/matapelajaran/" + id, true);
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var mataPelajaran = JSON.parse(xhr.responseText);
+                    document.getElementById("editId").value = mataPelajaran.id;
+                    document.getElementById("editKodeMapel").value = mataPelajaran.kodeMapel;
+                    document.getElementById("editNamaMapel").value = mataPelajaran.namaMapel;
+                    document.getElementById("editTingkat").value = mataPelajaran.tingkat;
+
+                    // Tampilkan form edit
+                    document.getElementById("editFormContainer").style.display = "block";
+                } else {
+                    alert('Gagal mendapatkan data mata pelajaran.');
+                }
+            };
+            xhr.send();
+        }
+
+        // Function untuk menyimpan perubahan pada mata pelajaran yang diedit
+        function updateMataPelajaran() {
+            var id = document.getElementById("editId").value;
+            var xhr = new XMLHttpRequest();
+            xhr.open("PUT", "/api/matapelajaran/" + id, true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            var kodeMapel = document.getElementById("editKodeMapel").value;
+            var namaMapel = document.getElementById("editNamaMapel").value;
+            var tingkat = document.getElementById("editTingkat").value;
+
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    alert('Mata pelajaran berhasil diperbarui!');
+                    loadMataPelajaran(); // Muat ulang data setelah berhasil update
+                    cancelEdit(); // Sembunyikan form edit setelah selesai
+                } else {
+                    alert('Gagal memperbarui mata pelajaran.');
+                }
+            };
+
+            var data = JSON.stringify({
+                kodeMapel: kodeMapel,
+                namaMapel: namaMapel,
+                tingkat: tingkat
+            });
+            xhr.send(data);
+        }
+
+        // Function untuk menghapus mata pelajaran berdasarkan ID
+        function deleteMataPelajaran(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus mata pelajaran ini?')) {
+                var xhr = new XMLHttpRequest();
+                xhr.open("DELETE", "/api/matapelajaran/" + id, true);
+                xhr.onload = function () {
+                    if (xhr.status === 204) {
+                        alert('Mata pelajaran berhasil dihapus!');
+                        loadMataPelajaran(); // Muat ulang data setelah berhasil hapus
+                    } else {
+                        alert('Gagal menghapus mata pelajaran.');
+                    }
+                };
+                xhr.send();
+            }
+        }
+
+        // Function untuk membatalkan edit dan menyembunyikan form edit
+        function cancelEdit() {
+            document.getElementById("editFormContainer").style.display = "none";
+            document.getElementById("editId").value = "";
+            document.getElementById("editKodeMapel").value = "";
+            document.getElementById("editNamaMapel").value = "";
+            document.getElementById("editTingkat").value = "";
+        }
+
+        // Function untuk mereset form tambah mata pelajaran
+        function resetForm() {
+            document.getElementById("kodeMapel").value = "";
+            document.getElementById("namaMapel").value = "";
+            document.getElementById("tingkat").value = "";
+        }
+    </script>
+</body>
+</html>

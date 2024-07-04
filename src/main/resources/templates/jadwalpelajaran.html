@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Pelajaran</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- SweetAlert2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+        .form-control, .form-select {
+            border-radius: 0.375rem;
+        }
+        .btn-custom {
+            border-radius: 0.375rem;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+        }
+    </style>
+    <script>
+function submitFormPost() {
+    var form = document.getElementById("jadwalPelajaranForm");
+    var formData = new FormData(form);
+
+    if (formData.get('hari') === '' || formData.get('idGuru') === '' || formData.get('idKelas') === '' || formData.get('idMapel') === '' || formData.get('idSiswa') === '' || formData.get('jamMulai') === '' || formData.get('jamSelesai') === '') {
+        Swal.fire({
+            icon: 'error',
+            title: 'Maaf!',
+            text: 'Tidak ada isian yang boleh kosong.',
+        });
+    } else {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/jadwalpelajaran", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        xhr.onload = function () {
+            if (xhr.status === 200 || xhr.status === 201) { // Berhasil POST
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: 'Data berhasil ditambahkan!',
+                });
+                form.reset();
+                refreshJadwalPelajaranTable(); // Refresh tabel setelah POST
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal!',
+                    text: 'Gagal menambahkan data.',
+                });
+            }
+        };
+
+        var jsonData = {
+            hari: formData.get('hari'),
+            idGuru: formData.get('idGuru'),
+            idKelas: formData.get('idKelas'),
+            mataPelajaran: { id: formData.get('idMapel') },
+            siswa: { id: formData.get('idSiswa') },
+            jamMulai: formData.get('jamMulai'),
+            jamSelesai: formData.get('jamSelesai')
+        };
+
+        xhr.send(JSON.stringify(jsonData));
+    }
+}
+
+function submitFormPut(id) {
+    var form = document.getElementById("jadwalPelajaranForm");
+    var formData = new FormData(form);
+
+    if (formData.get('hari') === '' || formData.get('idGuru') === '' || formData.get('idKelas') === '' || formData.get('idMapel') === '' || formData.get('idSiswa') === '' || formData.get('jamMulai') === '' || formData.get('jamSelesai') === '') {
+        Swal.fire({
+            icon: 'error',
+            title: 'Maaf!',
+            text: 'Tidak ada isian yang boleh kosong.',
+        });
+    } else {
+        var xhr = new XMLHttpRequest();
+        xhr.open("PUT", "/api/jadwalpelajaran/" + id, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        xhr.onload = function () {
+            if (xhr.status === 200 || xhr.status === 204) { // Berhasil PUT
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: 'Data berhasil diubah!',
+                });
+                form.reset();
+                refreshJadwalPelajaranTable(); // Refresh tabel setelah PUT
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal!',
+                    text: 'Gagal mengubah data.',
+                });
+            }
+        };
+
+        var jsonData = {
+            hari: formData.get('hari'),
+            idGuru: formData.get('idGuru'),
+            idKelas: formData.get('idKelas'),
+            mataPelajaran: { id: formData.get('idMapel') },
+            siswa: { id: formData.get('idSiswa') },
+            jamMulai: formData.get('jamMulai'),
+            jamSelesai: formData.get('jamSelesai')
+        };
+
+        xhr.send(JSON.stringify(jsonData));
+    }
+}
+
+function editJadwalPelajaran(id) {
+    Swal.fire({
+        title: 'Apakah Anda ingin mengubahnya?',
+        text: `Anda akan mengubah data jadwal pelajaran pada ID ${id}!`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, ubah!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/api/jadwalpelajaran/" + id, true);
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var jadwalPelajaran = JSON.parse(xhr.responseText);
+
+                    // Isi formulir dengan data jadwalPelajaran yang akan diubah
+                    document.getElementById("id").value = jadwalPelajaran.id;
+                    document.getElementById("hari").value = jadwalPelajaran.hari;
+                    document.getElementById("idGuru").value = jadwalPelajaran.idGuru;
+                    document.getElementById("idKelas").value = jadwalPelajaran.idKelas;
+                    document.getElementById("idMapel").value = jadwalPelajaran.mataPelajaran.id;
+                    document.getElementById("idSiswa").value = jadwalPelajaran.siswa.id;
+                    document.getElementById("jamMulai").value = jadwalPelajaran.jamMulai;
+                    document.getElementById("jamSelesai").value = jadwalPelajaran.jamSelesai;
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: 'Gagal mendapatkan data jadwal pelajaran.',
+                    });
+                }
+            };
+            xhr.send();
+        }
+    });
+}
+
+
+        function deleteJadwalPelajaran(id) {
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Jadwal pelajaran ini akan dihapus!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("DELETE", "/api/jadwalpelajaran/" + id, true);
+                    xhr.onload = function () {
+                        if (xhr.status === 204) {
+                            Swal.fire(
+                                'Dihapus!',
+                                'Jadwal pelajaran berhasil dihapus!',
+                                'success'
+                            );
+                            refreshJadwalPelajaranTable(); // Refresh tabel setelah penghapusan
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal!',
+                                text: 'Gagal menghapus jadwal pelajaran.',
+                            });
+                        }
+                    };
+                    xhr.send();
+                }
+            });
+        }
+
+        function refreshJadwalPelajaranTable() {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "/api/jadwalpelajaran", true);
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            var jadwalPelajaranList = JSON.parse(xhr.responseText);
+            var tableBody = document.getElementById("jadwalPelajaranTableBody");
+            tableBody.innerHTML = "";
+
+            jadwalPelajaranList.forEach(function (jadwalPelajaran) {
+                var row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${jadwalPelajaran.id}</td>
+                    <td>${jadwalPelajaran.hari}</td>
+                    <td>${jadwalPelajaran.idGuru}</td>
+                    <td>${jadwalPelajaran.idKelas}</td>
+                    <td>${jadwalPelajaran.mataPelajaran.namaMapel}</td>
+                    <td>${jadwalPelajaran.mataPelajaran.id}</td>
+                    <td>${jadwalPelajaran.siswa.namaLengkap}</td>
+                    <td>${jadwalPelajaran.siswa.id}</td>
+                    <td>${jadwalPelajaran.jamMulai}</td>
+                    <td>${jadwalPelajaran.jamSelesai}</td>
+                    <td>
+                        <button type="button" class="btn btn-warning btn-sm" onclick="editJadwalPelajaran(${jadwalPelajaran.id})">Edit</button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteJadwalPelajaran(${jadwalPelajaran.id})">Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal!',
+                text: 'Gagal memuat data jadwal pelajaran.',
+            });
+        }
+    };
+    xhr.send();
+}
+
+
+        function populateDropdowns() {
+            var xhrMapel = new XMLHttpRequest();
+            xhrMapel.open("GET", "/api/matapelajaran", true);
+            xhrMapel.onload = function () {
+                if (xhrMapel.status === 200) {
+                    var mapelList = JSON.parse(xhrMapel.responseText);
+                    var mapelSelect = document.getElementById("idMapel");
+                    mapelList.forEach(function (mapel) {
+                        var option = document.createElement("option");
+                        option.value = mapel.id;
+                        option.text = mapel.namaMapel;
+                        mapelSelect.appendChild(option);
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: 'Gagal memuat data mata pelajaran.',
+                    });
+                }
+            };
+            xhrMapel.send();
+
+            var xhrSiswa = new XMLHttpRequest();
+            xhrSiswa.open("GET", "/api/siswa", true);
+            xhrSiswa.onload = function () {
+                if (xhrSiswa.status === 200) {
+                    var siswaList = JSON.parse(xhrSiswa.responseText);
+                    var siswaSelect = document.getElementById("idSiswa");
+                    siswaList.forEach(function (siswa) {
+                        var option = document.createElement("option");
+                        option.value = siswa.id;
+                        option.text = siswa.namaLengkap;
+                        siswaSelect.appendChild(option);
+                    });
+                    Swal.fire('Success!', 'Data Berhasil Dimuat!', 'success');
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: 'Gagal memuat data siswa.',
+                    });
+                }
+            };
+            xhrSiswa.send();
+        }
+
+        window.onload = function () {
+            refreshJadwalPelajaranTable();
+            populateDropdowns();
+            setInterval(displayCurrentDate, 1000); // Menampilkan tanggal secara berkala
+        };
+
+        function checkapi() {
+            Swal.fire('Success!', 'Segera Diarahkan', 'success');
+            window.location.href = "/api/prestasiakademik";
+        }
+
+        function getCurrentDate() {
+            var currentDate = new Date();
+            var day = currentDate.getDate();
+            var month = currentDate.getMonth() + 1;
+            var year = currentDate.getFullYear();
+            var hours = currentDate.getHours();
+            var minutes = currentDate.getMinutes();
+            var seconds = currentDate.getSeconds();
+            return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+        }
+
+        function displayCurrentDate() {
+            document.getElementById('currentDate').textContent = getCurrentDate();
+        }
+
+        function toggleTheme() {
+            var htmlElement = document.documentElement;
+            var currentTheme = htmlElement.getAttribute('data-bs-theme');
+            var newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            htmlElement.setAttribute('data-bs-theme', newTheme);
+        }
+
+    </script>
+</head>
+<body>
+        <div class="container">
+            <div class="text-center mb-4">
+                <h1>Data Jadwal Pelajaran</h1>
+                <p id="currentDate" class="mb-0"></p>
+                <button id="themeSwitchBtn" class="btn btn-sm btn-light ms-2" onclick="toggleTheme()">Change Theme</button>
+            </div>
+
+        <form id="jadwalPelajaranForm" class="mb-4">
+            <input type="hidden" id="id" name="id"/>
+            
+            <div class="form-group">
+                <label for="hari" class="form-label">Hari:</label>
+                <select id="hari" name="hari" class="form-select">
+                    <option value="senin">Senin</option>
+                    <option value="selasa">Selasa</option>
+                    <option value="rabu">Rabu</option>
+                    <option value="kamis">Kamis</option>
+                    <option value="jumat">Jumat</option>
+                    <option value="sabtu">Sabtu</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="idGuru" class="form-label">ID Guru:</label>
+                <input type="text" id="idGuru" name="idGuru" class="form-control"/>
+            </div>
+
+            <div class="form-group">
+                <label for="idKelas" class="form-label">ID Kelas:</label>
+                <input type="text" id="idKelas" name="idKelas" class="form-control"/>
+            </div>
+
+            <div class="form-group">
+                <label for="idMapel" class="form-label">Mata Pelajaran:</label>
+                <select id="idMapel" name="idMapel" class="form-select">
+                    <!-- Options akan di-generate oleh JavaScript -->
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="idSiswa" class="form-label">Siswa:</label>
+                <select id="idSiswa" name="idSiswa" class="form-select">
+                    <!-- Options akan di-generate oleh JavaScript -->
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="jamMulai" class="form-label">Jam Mulai:</label>
+                <input type="time" id="jamMulai" name="jamMulai" class="form-control"/>
+            </div>
+
+            <div class="form-group">
+                <label for="jamSelesai" class="form-label">Jam Selesai:</label>
+                <input type="time" id="jamSelesai" name="jamSelesai" class="form-control"/>
+            </div>
+
+            <button type="button" class="btn btn-primary btn-custom" onclick="submitFormPost()">Tambah</button>
+            <button type="button" class="btn btn-warning btn-custom" onclick="submitFormPut(document.getElementById('id').value)">Ubah</button>
+            <button type="button" class="btn btn-secondary btn-custom" onclick="checkapi()">Check API</button>
+            <button type="button" class="btn btn-danger btn-custom" onclick="clearForm()">Batal</button>
+        </form>
+
+        <h2 class="text-center mb-4">Data Jadwal Pelajaran</h2>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="thead-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Hari</th>
+                    <th>ID Guru</th>
+                    <th>ID Kelas</th>
+                    <th>Mata Pelajaran</th>
+                    <th>ID Mapel</th>
+                    <th>Siswa</th>
+                    <th>ID Siswa</th>
+                    <th>Jam Mulai</th>
+                    <th>Jam Selesai</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="jadwalPelajaranTableBody">
+                <!-- Data jadwal pelajaran akan ditampilkan di sini -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+</html>

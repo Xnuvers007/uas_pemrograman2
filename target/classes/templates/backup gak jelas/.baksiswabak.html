@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Data Siswa</title>
+</head>
+<body>
+    <h1>Data Siswa</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Nama Lengkap</th>
+                <th>Alamat</th>
+                <th>Telepon</th>
+                <th>Nama Ortu</th>
+                <th>NISN</th>
+                <th>Status</th>
+                <th>Tanggal Lahir</th>
+                <th>Foto</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="siswa : ${siswaList}">
+                <td th:text="${siswa.namaLengkap}"></td>
+                <td th:text="${siswa.alamat}"></td>
+                <td th:text="${siswa.telp}"></td>
+                <td th:text="${siswa.namaOrtu}"></td>
+                <td th:text="${siswa.nisn}"></td>
+                <td th:text="${siswa.status ? 'Aktif' : 'Tidak Aktif'}"></td>
+                <td th:text="${siswa.tanggalLahir}"></td>
+                <td><img th:src="'data:image/jpeg;base64,' + ${siswa.foto}" width="100"/></td>
+                <td>
+                    <button th:onclick="'editSiswa(' + ${siswa.id} + ')'">Edit</button>
+                    <button th:onclick="'deleteSiswa(' + ${siswa.id} + ')'">Delete</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <button onclick="createSiswa()">Tambah Siswa</button>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Jadwal Pelajaran</title>
+    <script>
+        function submitForm(method, id) {
+            var form = document.getElementById("jadwalPelajaranForm");
+            var formData = new FormData(form);
+
+            var xhr = new XMLHttpRequest();
+            if (method === 'POST') {
+                xhr.open("POST", "/api/jadwalpelajaran", true);
+            } else if (method === 'PUT') {
+                xhr.open("PUT", "/api/jadwalpelajaran/" + id, true);
+            } else if (method === 'DELETE') {
+                xhr.open("DELETE", "/api/jadwalpelajaran/" + id, true);
+            }
+
+            xhr.onload = function () {
+                if (xhr.status === 200 || xhr.status === 204) {
+                    alert('Operasi berhasil!');
+                    form.reset();
+                    refreshJadwalPelajaranTable(); // Refresh tabel setelah operasi CRUD
+                } else {
+                    alert('Operasi gagal!');
+                }
+            };
+            xhr.send(formData);
+        }
+
+        function editJadwalPelajaran(id) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/api/jadwalpelajaran/" + id, true);
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var jadwalPelajaran = JSON.parse(xhr.responseText);
+
+                    // Isi formulir dengan data jadwalPelajaran yang akan diubah
+                    document.getElementById("id").value = jadwalPelajaran.id;
+                    document.getElementById("hari").value = jadwalPelajaran.hari;
+                    document.getElementById("idGuru").value = jadwalPelajaran.idGuru;
+                    document.getElementById("idKelas").value = jadwalPelajaran.idKelas;
+                    document.getElementById("idMapel").value = jadwalPelajaran.mataPelajaran.id;
+                    document.getElementById("idSiswa").value = jadwalPelajaran.siswa.id;
+                    document.getElementById("jamMulai").value = jadwalPelajaran.jamMulai;
+                    document.getElementById("jamSelesai").value = jadwalPelajaran.jamSelesai;
+                } else {
+                    alert('Gagal mendapatkan data jadwal pelajaran.');
+                }
+            };
+            xhr.send();
+        }
+
+        function deleteJadwalPelajaran(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus jadwal pelajaran ini?')) {
+                var xhr = new XMLHttpRequest();
+                xhr.open("DELETE", "/api/jadwalpelajaran/" + id, true);
+                xhr.onload = function () {
+                    if (xhr.status === 204) {
+                        alert('Jadwal pelajaran berhasil dihapus!');
+                        refreshJadwalPelajaranTable(); // Refresh tabel setelah penghapusan
+                    } else {
+                        alert('Gagal menghapus jadwal pelajaran.');
+                    }
+                };
+                xhr.send();
+            }
+        }
+
+        function refreshJadwalPelajaranTable() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/api/jadwalpelajaran", true);
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var jadwalPelajaranList = JSON.parse(xhr.responseText);
+                    var tableBody = document.getElementById("jadwalPelajaranTableBody");
+                    tableBody.innerHTML = "";
+
+                    jadwalPelajaranList.forEach(function (jadwalPelajaran) {
+                        var row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${jadwalPelajaran.id}</td>
+                            <td>${jadwalPelajaran.hari}</td>
+                            <td>${jadwalPelajaran.idGuru}</td>
+                            <td>${jadwalPelajaran.idKelas}</td>
+                            <td>${jadwalPelajaran.mataPelajaran.namaMapel}</td>
+                            <td>${jadwalPelajaran.siswa.namaLengkap}</td>
+                            <td>${jadwalPelajaran.jamMulai}</td>
+                            <td>${jadwalPelajaran.jamSelesai}</td>
+                            <td>
+                                <button type="button" onclick="editJadwalPelajaran(${jadwalPelajaran.id})">Edit</button>
+                                <button type="button" onclick="deleteJadwalPelajaran(${jadwalPelajaran.id})">Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    alert('Gagal memuat data jadwal pelajaran.');
+                }
+            };
+            xhr.send();
+        }
+
+        window.onload = function () {
+            refreshJadwalPelajaranTable();
+        };
+    </script>
+</head>
+<body>
+    <h1>CRUD Jadwal Pelajaran</h1>
+
+    <form id="jadwalPelajaranForm">
+        <input type="hidden" id="id" name="id"/>
+        
+        <label for="hari">Hari:</label>
+        <select id="hari" name="hari">
+            <option value="senin">Senin</option>
+            <option value="selasa">Selasa</option>
+            <option value="rabu">Rabu</option>
+            <option value="kamis">Kamis</option>
+            <option value="jumat">Jumat</option>
+            <option value="sabtu">Sabtu</option>
+        </select><br/><br/>
+        
+        <label for="idGuru">ID Guru:</label>
+        <input type="text" id="idGuru" name="idGuru"/><br/><br/>
+        
+        <label for="idKelas">ID Kelas:</label>
+        <input type="text" id="idKelas" name="idKelas"/><br/><br/>
+        
+        <label for="idMapel">ID Mata Pelajaran:</label>
+        <input type="text" id="idMapel" name="idMapel"/><br/><br/>
+        
+        <label for="idSiswa">ID Siswa:</label>
+        <input type="text" id="idSiswa" name="idSiswa"/><br/><br/>
+        
+        <label for="jamMulai">Jam Mulai:</label>
+        <input type="text" id="jamMulai" name="jamMulai"/><br/><br/>
+        
+        <label for="jamSelesai">Jam Selesai:</label>
+        <input type="text" id="jamSelesai" name="jamSelesai"/><br/><br/>
+        
+        <button type="button" onclick="submitForm('POST')">Tambah</button>
+        <button type="button" onclick="submitForm('PUT', document.getElementById('id').value)">Simpan</button>
+        <button type="button" onclick="clearForm()">Batal</button>
+    </form>
+
+    <h2>Data Jadwal Pelajaran</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Hari</th>
+                <th>ID Guru</th>
+                <th>ID Kelas</th>
+                <th>Mata Pelajaran</th>
+                <th>Siswa</th>
+                <th>Jam Mulai</th>
+                <th>Jam Selesai</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="jadwalPelajaranTableBody">
+            <!-- Data jadwal pelajaran akan ditampilkan di sini -->
+        </tbody>
+    </table>
+</body>
+</html>

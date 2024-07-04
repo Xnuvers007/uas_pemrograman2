@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Prestasi Akademik</title>
+</head>
+<body>
+    <h1>Data Prestasi Akademik</h1>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Deskripsi atau Nilai</th>
+                <th>Mata Pelajaran</th>
+                <th>ID Mata Pelajaran</th>
+                <th>Siswa</th>
+                <th>ID Siswa</th>
+                <th>Jenis Prestasi</th>
+                <th>Tanggal</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="prestasiAkademikTableBody">
+            <!-- Data prestasi akademik akan ditampilkan di sini -->
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h2>Form Prestasi Akademik</h2>
+    <form id="prestasiAkademikForm">
+        <label for="deskripsiAtauNilai">Deskripsi atau Nilai:</label>
+        <input type="text" id="deskripsiAtauNilai" name="deskripsiAtauNilai"><br><br>
+        
+        <label for="mataPelajaran">Mata Pelajaran:</label>
+        <select id="mataPelajaran" name="mataPelajaran">
+            <!-- Options akan di-generate oleh JavaScript -->
+        </select><br><br>
+
+        <label for="siswa">Siswa:</label>
+        <select id="siswa" name="siswa">
+            <!-- Options akan di-generate oleh JavaScript -->
+        </select><br><br>
+
+        <label for="jenisPrestasi">Jenis Prestasi:</label>
+        <input type="text" id="jenisPrestasi" name="jenisPrestasi"><br><br>
+
+        <label for="tanggal">Tanggal:</label>
+        <input type="date" id="tanggal" name="tanggal"><br><br>
+
+        <button type="button" onclick="submitForm()">Simpan</button>
+        <button type="button" onclick="clearForm()">Batal</button>
+        <button type="button" onclick="checkapi()">Check API</button>
+    </form>
+
+    <script>
+
+        function checkapi() {
+            window.location.href = "/api/prestasiakademik";
+        }
+        // URL API
+        const baseUrl = 'http://localhost:8080/api/prestasiakademik';
+        const mataPelajaranUrl = 'http://localhost:8080/api/matapelajaran';
+        const siswaUrl = 'http://localhost:8080/api/siswa';
+
+        // Function untuk mengambil data dari API menggunakan XHR
+        function fetchData(url, callback) {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+                    callback(null, data);
+                } else {
+                    callback('Error fetching data', null);
+                }
+            };
+            xhr.send();
+        }
+
+        // Function untuk mengisi dropdown Mata Pelajaran
+        function populateMataPelajaranDropdown() {
+            fetchData(mataPelajaranUrl, (error, data) => {
+                if (!error) {
+                    const select = document.getElementById('mataPelajaran');
+                    select.innerHTML = '';
+                    data.forEach(mataPelajaran => {
+                        const option = document.createElement('option');
+                        // option.value = mataPelajaran.id;
+                        option.value = `${mataPelajaran.id},${mataPelajaran.namaMapel}`;
+                        option.textContent = `${mataPelajaran.kodeMapel} - ${mataPelajaran.namaMapel}`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    console.error('Error fetching Mata Pelajaran data:', error);
+                }
+            });
+        }
+
+        // Function untuk mengisi dropdown Siswa
+        function populateSiswaDropdown() {
+            fetchData(siswaUrl, (error, data) => {
+                if (!error) {
+                    const select = document.getElementById('siswa');
+                    select.innerHTML = '';
+                    data.forEach(siswa => {
+                        const option = document.createElement('option');
+                        option.value = siswa.id;
+                        option.textContent = `${siswa.namaLengkap}`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    console.error('Error fetching Siswa data:', error);
+                }
+            });
+        }
+
+        // Function untuk menampilkan data Prestasi Akademik di tabel
+        function renderPrestasiAkademikTable() {
+            fetchData(baseUrl, (error, data) => {
+                if (!error) {
+                    const tableBody = document.getElementById('prestasiAkademikTableBody');
+                    tableBody.innerHTML = '';
+                    data.forEach(prestasi => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${prestasi.id}</td>
+                            <td>${prestasi.deskripsiAtauNilai}</td>
+                            <td>${prestasi.mataPelajaran ? prestasi.mataPelajaran.namaMapel : '-'}</td>
+                            <td>${prestasi.mataPelajaran ? prestasi.mataPelajaran.id : '-'}</td>
+                            <td>${prestasi.siswa ? prestasi.siswa.namaLengkap : '-'}</td>
+                            <td>${prestasi.siswa ? prestasi.siswa.id : '-'}</td>
+                            <td>${prestasi.jenisPrestasi}</td>
+                            <td>${new Date(prestasi.tanggal).toLocaleDateString()}</td>
+                            <td>
+                                <button onclick="editPrestasiAkademik(${prestasi.id})">Edit</button>
+                                <button onclick="deletePrestasiAkademik(${prestasi.id})">Delete</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    console.error('Error fetching Prestasi Akademik data:', error);
+                }
+            });
+        }
+
+        function submitForm() {
+    const form = document.getElementById('prestasiAkademikForm');
+    const formData = new FormData(form);
+
+    const prestasiAkademikData = {
+        deskripsiAtauNilai: formData.get('deskripsiAtauNilai'),
+        mataPelajaran: {
+            id: parseInt(formData.get('mataPelajaran')) // Pastikan ID dikirim sebagai angka
+        },
+        siswa: {
+            id: parseInt(formData.get('siswa')) // Pastikan ID dikirim sebagai angka
+        },
+        jenisPrestasi: formData.get('jenisPrestasi'),
+        tanggal: formData.get('tanggal')
+    };
+
+    const xhr = new XMLHttpRequest();
+    const method = form.dataset.prestasiId ? 'PUT' : 'POST';
+    const url = form.dataset.prestasiId ? `${baseUrl}/${form.dataset.prestasiId}` : baseUrl;
+
+    xhr.open(method, url, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+
+    xhr.onload = function() {
+        if (xhr.status === 200 || xhr.status === 201) {
+            alert('Data Prestasi Akademik berhasil disimpan!');
+            clearForm();
+            renderPrestasiAkademikTable();
+        } else {
+            alert('Gagal menyimpan data Prestasi Akademik.');
+        }
+    };
+
+    xhr.send(JSON.stringify(prestasiAkademikData));
+}
+
+
+        // Function untuk mengisi form saat mengedit
+        function editPrestasiAkademik(id) {
+            fetchData(`${baseUrl}/${id}`, (error, prestasi) => {
+                if (!error) {
+                    const form = document.getElementById('prestasiAkademikForm');
+                    form.dataset.prestasiId = prestasi.id;
+                    document.getElementById('deskripsiAtauNilai').value = prestasi.deskripsiAtauNilai;
+                    document.getElementById('mataPelajaran').value = prestasi.mataPelajaran ? prestasi.mataPelajaran.id : '';
+                    document.getElementById('siswa').value = prestasi.siswa ? prestasi.siswa.id : '';
+                    document.getElementById('jenisPrestasi').value = prestasi.jenisPrestasi;
+                    document.getElementById('tanggal').value = new Date(prestasi.tanggal).toISOString().split('T')[0];
+                } else {
+                    console.error('Error fetching Prestasi Akademik data:', error);
+                }
+            });
+        }
+
+        // Function untuk menghapus data Prestasi Akademik
+        function deletePrestasiAkademik(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+                const xhr = new XMLHttpRequest();
+                xhr.open('DELETE', `${baseUrl}/${id}`, true);
+                xhr.onload = function() {
+                    if (xhr.status === 204) {
+                        alert('Data Prestasi Akademik berhasil dihapus!');
+                        renderPrestasiAkademikTable();
+                    } else {
+                        alert('Gagal menghapus data Prestasi Akademik.');
+                    }
+                };
+                xhr.send();
+            }
+        }
+
+        // Function untuk membersihkan form
+        function clearForm() {
+            const form = document.getElementById('prestasiAkademikForm');
+            form.reset();
+            delete form.dataset.prestasiId;
+        }
+
+        // Load data pertama kali
+        window.onload = function() {
+            renderPrestasiAkademikTable();
+            populateMataPelajaranDropdown();
+            populateSiswaDropdown();
+        };
+    </script>
+</body>
+</html>
